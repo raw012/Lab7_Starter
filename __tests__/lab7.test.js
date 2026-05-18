@@ -21,9 +21,9 @@ describe('Basic user flow for Website', () => {
   // Check to make sure that all 20 <product-item> elements have data in them
   // We use .skip() here because this test has a TODO that has not been completed yet.
   // Make sure to remove the .skip after you finish the TODO. 
-  it.skip('Make sure <product-item> elements are populated', async () => {
+  it('Make sure <product-item> elements are populated', async () => {
     console.log('Checking to make sure <product-item> elements are populated...');
-
+  
     // Start as true, if any don't have data, swap to false
     let allArePopulated = true;
 
@@ -44,6 +44,13 @@ describe('Basic user flow for Website', () => {
     if (firstValue.image.length == 0) { allArePopulated = false; }
 
     // Expect allArePopulated to still be true
+    
+    for (let i = 0; i < prodItemsData.length; i++) {
+      console.log(`Checking product item ${i+1}/${prodItemsData.length}`);
+      if (prodItemsData[i].title.length == 0) { allArePopulated = false; }
+      if (prodItemsData[i].price.length == 0) { allArePopulated = false; }
+      if (prodItemsData[i].image.length == 0) { allArePopulated = false; }
+    }
     expect(allArePopulated).toBe(true);
 
     /**
@@ -57,8 +64,16 @@ describe('Basic user flow for Website', () => {
 
   // Check to make sure that when you click "Add to Cart" on the first <product-item> that
   // the button swaps to "Remove from Cart"
-  it.skip('Clicking the "Add to Cart" button should change button text', async () => {
+  it('Clicking the "Add to Cart" button should change button text', async () => {
     console.log('Checking the "Add to Cart" button...');
+    const productItem=await page.$('product-item');
+    const shadowRoot=await productItem.getProperty('shadowRoot');
+    const button=await shadowRoot.$('button');
+    await page.evaluate(el => el.click(), button);
+    const innerText=await button.getProperty('innerText');
+    const text= await innerText.jsonValue();
+    expect(text).toBe('Remove from Cart');
+
 
     /**
      **** TODO - STEP 2 **** 
@@ -73,8 +88,21 @@ describe('Basic user flow for Website', () => {
 
   // Check to make sure that after clicking "Add to Cart" on every <product-item> that the Cart
   // number in the top right has been correctly updated
-  it.skip('Checking number of items in cart on screen', async () => {
+  it('Checking number of items in cart on screen', async () => {
     console.log('Checking number of items in cart on screen...');
+    const productItem=await page.$$('product-item');
+    for(let i=1; i< productItem.length; i++){
+      const shadowRoot=await productItem[i].getProperty('shadowRoot');
+      const button=await shadowRoot.$('button');
+      await page.evaluate(el => el.click(), button);
+      const innerText=await button.getProperty('innerText');
+    }
+    const cartCount = await page.$('#cart-count');
+    const innerText = await cartCount.getProperty('innerText');
+    const text= await innerText.jsonValue();
+    expect(text).toBe('20');
+    
+
 
     /**
      **** TODO - STEP 3 **** 
@@ -87,9 +115,29 @@ describe('Basic user flow for Website', () => {
   }, 10000);
 
   // Check to make sure that after you reload the page it remembers all of the items in your cart
-  it.skip('Checking number of items in cart on screen after reload', async () => {
+  it('Checking number of items in cart on screen after reload', async () => {
     console.log('Checking number of items in cart on screen after reload...');
 
+    await page.reload();
+    const productItem=await page.$$('product-item');
+    let correctButtonText = true;
+    for(let i=0; i<productItem.length; i++){
+      const shadowRoot=await productItem[i].getProperty('shadowRoot');
+      const button=await shadowRoot.$('button');
+      const innerText=await button.getProperty('innerText');
+      const text= await innerText.jsonValue();
+      if(text!='Remove from Cart'){
+        correctButtonText =false;
+      }
+    }
+    expect(correctButtonText).toBe(true);
+    const cartCount = await page.$('#cart-count');
+    const innerText = await cartCount.getProperty('innerText');
+    const text= await innerText.jsonValue();
+    expect(text).toBe('20');
+
+
+    
     /**
      **** TODO - STEP 4 **** 
      * Reload the page, then select all of the <product-item> elements, and check every
